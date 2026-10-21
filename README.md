@@ -1,6 +1,6 @@
-# MallDesk — Multi-Store Retail Management System
+# MallDesk | Multi-Store Retail Management System
 
-![image](frontend\public\MallDesk Retail Dashboard Showcase.png)
+![MallDesk Retail Dashboard Showcase](./frontend/public/MallDesk.png)
 
 MallDesk is a multi-store retail operations platform engineered with **Django REST Framework** and **React + TypeScript**. It features strict server-side store isolation, role-based access control (RBAC), catalog management, real-time analytics, and a store-grounded AI Assistant.
 
