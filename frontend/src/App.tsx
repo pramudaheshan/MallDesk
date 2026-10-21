@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation } fro
 import { AlertTriangle, ArrowRight, BarChart3, Boxes, ChevronDown, CircleHelp, Edit3, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, MoreHorizontal, Package, Plus, Search, Send, Settings, ShieldCheck, ShoppingBag, Store as StoreIcon, Trash2, Users, X } from 'lucide-react';
 import { api, ApiError, asList } from '@/lib/api';
 import type { AssistantResponse, AuthMe, Membership, Product, ProductInput, Role, Store, User } from '@/types';
+import { StoreOverview } from './components/StoreOverview';
 const money = (value: number | string) => `Rs. ${Number(value || 0).toLocaleString('en-LK', { maximumFractionDigits: 2 })}`;
 const roleLabel = (role?: Role) => role === 'administrator' ? 'Administrator' : role === 'manager' ? 'Store manager' : 'Staff';
 const normalize = <T,>(data: unknown, key: string): T | null => (data && typeof data === 'object' && key in data ? (data as Record<string, T>)[key] : null);
@@ -200,19 +201,7 @@ function ErrorState({ message }: {
 function DashboardPage({ store }: {
     store: Store | null;
 }) {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    useEffect(() => { if (!store) {
-        setLoading(false);
-        return;
-    } let current = true; setLoading(true); api.products(store.id).then((data) => { if (current)
-        setProducts(asList<Product>(data)); }).catch((err) => current && setError(err instanceof ApiError ? err.message : 'Could not load products.')).finally(() => current && setLoading(false)); return () => { current = false; }; }, [store]);
-    if (!store)
-        return <EmptyStore />;
-    const low = products.filter((product) => product.stock_quantity <= (product.low_stock_threshold ?? 10));
-    const stock = products.reduce((total, product) => total + Number(product.stock_quantity || 0), 0);
-    return <><PageHeader eyebrow="STORE OVERVIEW" title={`Good to see you, ${store.name}.`} description="A quick read on what needs attention across your store." action={<Link to="/products" className="button button-primary"><Plus size={17}/>Add product</Link>}/>{error && <ErrorState message={error}/>}{loading ? <LoadingState /> : <><section className="metric-grid"><Metric icon={<Package size={18}/>} label="Total products" value={products.length} accent="orange"/><Metric icon={<Boxes size={18}/>} label="Total stock quantity" value={stock.toLocaleString()}/><Metric icon={<AlertTriangle size={18}/>} label="Low stock items" value={low.length} accent={low.length ? 'warning' : 'green'}/><Metric icon={<ShoppingBag size={18}/>} label="Catalog value" value={money(products.reduce((total, product) => total + Number(product.selling_price || 0) * Number(product.stock_quantity || 0), 0))}/></section><div className="content-grid"><section className="card"><div className="card-header"><div><h2>Low stock products</h2><p>Items that may need a reorder soon.</p></div><Link to="/products" className="text-link">View products <ArrowRight size={15}/></Link></div>{low.length ? <ProductTable products={low.slice(0, 5)} compact/> : <div className="quiet-empty"><span className="success-icon">✓</span><div><b>Inventory looks healthy</b><p>No products are below their low-stock threshold.</p></div></div>}</section><section className="card assistant-card"><div className="assistant-orb"><MessageSquare size={21}/></div><div><div className="eyebrow">MALLDESK ASSISTANT</div><h2>Have a question about this store?</h2><p>Get a quick answer about stock, products, or selling prices.</p><Link to="/assistant" className="button button-dark">Ask the assistant <ArrowRight size={16}/></Link></div></section></div></>}</>;
+    return <StoreOverview store={store} />;
 }
 function Metric({ icon, label, value, accent = 'neutral' }: {
     icon: ReactNode;
