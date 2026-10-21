@@ -26,13 +26,13 @@ def generate_answer(message, products):
         ).order_by("stock_quantity", "name")
 
         if not low_stock.exists():
-            return "There are no products with low stock in this store."
+            return "Good news — nothing is running low in this store right now."
 
         items = [
             f"{product.name} ({product.stock_quantity} left)"
             for product in low_stock
         ]
-        return "Products with low stock: " + ", ".join(items) + "."
+        return "Here’s what’s running low: " + ", ".join(items) + "."
 
     if any(phrase in text for phrase in [
         "how many products",
@@ -41,7 +41,7 @@ def generate_answer(message, products):
         "total products",
     ]):
         count = products.count()
-        return f"There are {count} products in this store."
+        return f"You currently have {count} products in this store."
 
     price_match = re.search(
         r"(?:more than|over|above|greater than)\s*(?:rs\.?|lkr)?\s*([\d,]+(?:\.\d{1,2})?)",
@@ -60,32 +60,31 @@ def generate_answer(message, products):
         ).order_by("-selling_price", "name")
 
         if not matching.exists():
-            return f"No products have a selling price above Rs. {amount:,.2f}."
+            return f"I couldn’t find any products priced above Rs. {amount:,.2f}."
 
         items = [
             f"{product.name} (Rs. {product.selling_price:,.2f})"
             for product in matching
         ]
-        return "Products above that price: " + ", ".join(items) + "."
+        return "These products are above that price: " + ", ".join(items) + "."
 
     if any(word in text for word in ["list products", "show products", "all products"]):
         items = products.order_by("name")
 
         if not items.exists():
-            return "There are no products in this store yet."
+            return "There aren’t any products in this store yet."
 
-        return "Products in this store: " + ", ".join(
+        return "Here’s the current product list: " + ", ".join(
             product.name for product in items
         ) + "."
 
     if "stock" in text and any(word in text for word in ["total", "how much", "quantity"]):
         total = sum(products.values_list("stock_quantity", flat=True))
-        return f"The total stock quantity in this store is {total} units."
+        return f"You have {total} units of stock across this store."
 
     return (
-        "I can help with product counts, low-stock products, total stock "
-        "quantity, product lists, and products above a selling price. "
-        "What would you like to know?"
+        "I can help you check product counts, low-stock items, total stock, "
+        "product lists, or prices above a certain amount. What should we look at?"
     )
 
 

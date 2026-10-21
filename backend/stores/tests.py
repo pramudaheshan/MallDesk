@@ -73,6 +73,30 @@ class StoreUserManagementTests(TestCase):
             ).exists()
         )
 
+    def test_admin_can_create_and_assign_new_user(self):
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.post(
+            f"/api/stores/{self.store.id}/users/",
+            {
+                "username": "new_store_user",
+                "password": "NewStorePass123!",
+                "role": "staff",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        new_user = User.objects.get(username="new_store_user")
+        self.assertTrue(new_user.check_password("NewStorePass123!"))
+        self.assertTrue(
+            StoreMembership.objects.filter(
+                user=new_user,
+                store=self.store,
+                role="staff",
+            ).exists()
+        )
+
     def test_manager_cannot_assign_users(self):
         self.client.force_authenticate(user=self.manager)
 

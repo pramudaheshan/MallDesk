@@ -13,6 +13,8 @@ from rest_framework.views import APIView
 from .models import StoreMembership
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 
@@ -144,6 +146,7 @@ class StoreUserListCreateView(APIView):
 
         username = request.data.get("username")
         role = request.data.get("role")
+        password = request.data.get("password")
 
         if not isinstance(username, str) or not username.strip():
             return Response(
@@ -157,19 +160,11 @@ class StoreUserListCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        user = User.objects.filter(
-            username=username.strip()
-        ).first()
+        username = username.strip()
+        user = User.objects.filter(username=username).first()
 
-        if user is None:
-            return Response(
-                {"username": "User does not exist."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        if StoreMembership.objects.filter(
-            user=user,
-            store=membership.store,
+        if user and StoreMembership.objects.filter(
+            user=user, store=membership.store,
         ).exists():
             return Response(
                 {"detail": "User is already assigned to this store."},
@@ -178,6 +173,23 @@ class StoreUserListCreateView(APIView):
 
         try:
             with transaction.atomic():
+                if user is None:
+                    if not isinstance(password, str) or not password:
+                        return Response(
+                            {"password": "A password is required for a new user."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    try:
+                        validate_password(password)
+                    except ValidationError as error:
+                        return Response(
+                            {"password": list(error.messages)},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    user = User.objects.create_user(
+                        username=username,
+                        password=password,
+                    )
                 new_membership = StoreMembership.objects.create(
                     user=user,
                     store=membership.store,
